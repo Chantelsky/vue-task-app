@@ -6,6 +6,34 @@
       <div class="cardBox">
         <div class="container">
           <h2>My Tasks</h2>
+          <hr />
+          <div class="col-4">
+            <input
+              v-model="hideDone"
+              type="checkbox"
+              id="hideDone"
+              name="hideDone"
+            />
+            <label for="hideDone"> Hide Done Tasks </label>
+          </div>
+          <div class="col-4">
+            <input
+              v-model="reverse"
+              type="checkbox"
+              id="reverse"
+              name="reverse"
+            />
+            <label for="reverse"> Reverse Order </label>
+          </div>
+          <div class="col-4">
+            <input
+              v-model="sortById"
+              type="checkbox"
+              id="sortById"
+              name="sortById"
+            />
+            <label for="sortById"> Sort By Id </label>
+          </div>
           <ul class="taskList">
             <li
               v-for="(taskItem, index) in displayList"
@@ -14,9 +42,9 @@
               <input
                 type="checkbox"
                 :checked="!!taskItem.finishedAt"
-                @input="changeStatus(index)"
+                @input="changeStatus(taskItem.id)"
               />
-              {{ taskItem.task }}
+              #{{ taskItem.id }} - {{ taskItem.task }}
               <span v-if="taskItem.finishedAt">
                 | Done at:
                 {{ formatDate(taskItem.finishedAt) }}
@@ -40,10 +68,31 @@ export default {
   },
   data: () => ({
     taskList: [],
+    hideDone: false,
+    reverse: false,
+    sortById: false,
   }),
   computed: {
+    baseList() {
+      return [...this.taskList].map((i, index) => ({
+        ...i,
+        id: index + 1,
+      }));
+    },
+    filteredList() {
+      return this.hideDone
+        ? [...this.baseList].filter((i) => !i.finishedAt)
+        : [...this.baseList];
+    },
+    sortedList() {
+      return [...this.filteredList].sort((a, b) =>
+        this.sortById ? b.id - a.id : (a.finishedAt || 0) - (b.finishedAt || 0)
+      );
+    },
     displayList() {
-      return this.taskList;
+      const taskList = [...this.sortedList];
+
+      return this.reverse ? taskList.reverse() : taskList;
     },
   },
   methods: {
@@ -71,8 +120,8 @@ export default {
         finishedAt: undefined,
       });
     },
-    changeStatus(taskIndex) {
-      const task = this.$data.taskList[taskIndex];
+    changeStatus(taskId) {
+      const task = this.taskList[taskId - 1];
       if (task.finishedAt) {
         task.finishedAt = undefined;
       } else {
